@@ -231,7 +231,7 @@ Configure the dataset path in `configs/config.yaml` according to the project's d
 python -m pytest -q
 ```
 
-The current recorded test run passed 12 tests. Run the tests again after making changes to verify the current state.
+The latest local verification passed 16 tests. Run the tests again after making changes to verify the current state.
 
 ## Run Data Quality Validation
 
@@ -271,3 +271,28 @@ GitHub: [Rauof-Qadir](https://github.com/Rauof-Qadir)
 ---
 
 *This project is an educational and portfolio-oriented machine learning experiment, not a production-ready banking fraud prevention system.*
+
+
+## Final Cost-Aware Audit
+
+The project includes validation-selected cost thresholds and a test evaluation
+across three models and 16 illustrative business-cost scenarios per model.
+
+Additional experiment scripts:
+- `src/audit_balance_identity.py` ? investigates origin-balance patterns.
+- `src/controlled_ablation.py` ? compares selected feature groups.
+- `src/origin_feature_ablation.py` ? investigates origin-feature dependencies.
+- `src/cost_aware_thresholds.py` ? selects thresholds using validation costs.
+- `src/evaluate_cost_aware_test.py` ? evaluates selected thresholds on test data.
+- `src/compare_balance_rule.py` ? compares balance-based rules and ML models.
+
+The consolidated local audit is generated at
+`reports/final_cost_aware_model_audit.csv`. Generated reports are not generally
+tracked by Git because the `reports/` directory is ignored; selected final
+artifacts can be explicitly added when appropriate.
+
+**Evaluation caveat:** the chronological test split was examined in multiple
+exploratory analyses. Treat those comparisons as exploratory, not as an
+untouched final holdout or an unbiased estimate of production performance.
+A fresh future-period dataset is needed for stronger independent evaluation.
+

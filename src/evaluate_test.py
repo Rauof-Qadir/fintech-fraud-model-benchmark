@@ -17,6 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT / "data" / "processed"
 MODEL_DIR = ROOT / "models"
 REPORT_DIR = ROOT / "reports"
+THRESHOLD_REPORT_PATH = REPORT_DIR / "threshold_benchmark.csv"
 
 FP_COST = 5.0
 
@@ -33,19 +34,41 @@ FEATURES = [
 ]
 
 MODELS = {
-    "Logistic Regression": {
-        "file": "logistic_regression.joblib",
-        "threshold": 0.65,
-    },
-    "Random Forest": {
-        "file": "random_forest.joblib",
-        "threshold": 0.20,
-    },
-    "XGBoost": {
-        "file": "xgboost.joblib",
-        "threshold": 0.07,
-    },
+    "Logistic Regression": {"file": "logistic_regression.joblib"},
+    "Random Forest": {"file": "random_forest.joblib"},
+    "XGBoost": {"file": "xgboost.joblib"},
 }
+
+
+def load_validation_thresholds():
+    if not THRESHOLD_REPORT_PATH.exists():
+        raise FileNotFoundError(
+            "Validation threshold report missing. Run "
+            "python src/compare_thresholds.py first."
+        )
+
+    table = pd.read_csv(THRESHOLD_REPORT_PATH)
+    required = {"model", "best_threshold"}
+    if not required.issubset(table.columns):
+        raise ValueError(
+            f"Threshold report must contain columns: {sorted(required)}"
+        )
+
+    if table["model"].duplicated().any():
+        raise ValueError("Duplicate model names in threshold report.")
+
+    thresholds = table.set_index("model")["best_threshold"].to_dict()
+    missing = set(MODELS) - set(thresholds)
+    if missing:
+        raise ValueError(f"Missing validation thresholds for: {sorted(missing)}")
+
+    for name in MODELS:
+        value = float(thresholds[name])
+        if not np.isfinite(value) or not 0 <= value <= 1:
+            raise ValueError(f"Invalid threshold for {name}: {value}")
+        thresholds[name] = value
+
+    return thresholds
 
 
 def main():
@@ -59,11 +82,12 @@ def main():
     print(f"Actual fraud cases: {int(y_test.sum()):,}")
     print(f"Fraud rate: {y_test.mean():.4%}")
 
+    thresholds = load_validation_thresholds()
     rows = []
 
     for model_name, config in MODELS.items():
         model = joblib.load(MODEL_DIR / config["file"])
-        threshold = config["threshold"]
+        threshold = thresholds[model_name]
 
         probabilities = model.predict_proba(X_test)[:, 1]
         predictions = (probabilities >= threshold).astype(int)

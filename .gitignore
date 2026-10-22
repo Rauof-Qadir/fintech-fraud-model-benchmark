@@ -12,3 +12,6 @@ models/*
 reports/*
 
 .env
+
+# Local temporary backups
+archive/

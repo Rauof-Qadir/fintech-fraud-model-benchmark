@@ -39,38 +39,56 @@ MODELS = {
 }
 
 
-def evaluate_threshold(y_true, probabilities, amounts, threshold):
-    predictions = (probabilities >= threshold).astype(int)
+def evaluate_thresholds(y_true, probabilities, amounts, thresholds):
+    """Evaluate many thresholds efficiently using sorted probabilities."""
+    order = np.argsort(probabilities)
+    sorted_probabilities = probabilities[order]
+    sorted_y = y_true[order]
+    sorted_amounts = amounts[order]
 
-    false_positive = (y_true == 0) & (predictions == 1)
-    false_negative = (y_true == 1) & (predictions == 0)
+    n = len(y_true)
+    total_fraud = int(y_true.sum())
+    prefix_fraud = np.concatenate(([0], np.cumsum(sorted_y, dtype=np.int64)))
+    prefix_missed_amount = np.concatenate((
+        [0.0],
+        np.cumsum(sorted_amounts * sorted_y, dtype=np.float64),
+    ))
 
-    fp = int(false_positive.sum())
-    fn = int(false_negative.sum())
-    tp = int(((y_true == 1) & (predictions == 1)).sum())
+    results = []
 
-    fp_cost = fp * FP_COST
-    missed_fraud_amount = float(amounts[false_negative].sum())
-    total_cost = fp_cost + missed_fraud_amount
+    for threshold in thresholds:
+        idx = int(np.searchsorted(
+            sorted_probabilities, threshold, side="left"
+        ))
 
-    return {
-        "threshold": float(threshold),
-        "precision": precision_score(
-            y_true, predictions, zero_division=0
-        ),
-        "recall": recall_score(
-            y_true, predictions, zero_division=0
-        ),
-        "f1": f1_score(
-            y_true, predictions, zero_division=0
-        ),
-        "false_positives": fp,
-        "false_negatives": fn,
-        "true_positives": tp,
-        "false_positive_cost_units": fp_cost,
-        "missed_fraud_amount_units": missed_fraud_amount,
-        "estimated_total_cost_units": total_cost,
-    }
+        tp = int(total_fraud - prefix_fraud[idx])
+        fp = int((n - idx) - tp)
+        fn = int(total_fraud - tp)
+
+        precision = tp / (tp + fp) if (tp + fp) else 0.0
+        recall = tp / total_fraud if total_fraud else 0.0
+        f1 = (
+            2 * precision * recall / (precision + recall)
+            if (precision + recall) else 0.0
+        )
+
+        fp_cost = fp * FP_COST
+        missed_amount = float(prefix_missed_amount[idx])
+
+        results.append({
+            "threshold": float(threshold),
+            "precision": precision,
+            "recall": recall,
+            "f1": f1,
+            "false_positives": fp,
+            "false_negatives": fn,
+            "true_positives": tp,
+            "false_positive_cost_units": fp_cost,
+            "missed_fraud_amount_units": missed_amount,
+            "estimated_total_cost_units": fp_cost + missed_amount,
+        })
+
+    return results
 
 
 def main():
@@ -95,12 +113,9 @@ def main():
         model = joblib.load(model_path)
         probabilities = model.predict_proba(X_val)[:, 1]
 
-        threshold_results = [
-            evaluate_threshold(
-                y_val, probabilities, amounts, threshold
-            )
-            for threshold in THRESHOLDS
-        ]
+        threshold_results = evaluate_thresholds(
+            y_val, probabilities, amounts, THRESHOLDS
+        )
 
         best = min(
             threshold_results,
@@ -109,12 +124,12 @@ def main():
             ],
         )
 
-        baseline = evaluate_threshold(
+        baseline = evaluate_thresholds(
             y_val,
             probabilities,
             amounts,
-            BASELINE_THRESHOLD,
-        )
+            [BASELINE_THRESHOLD],
+        )[0]
 
         all_results.append({
             "model": model_name,
