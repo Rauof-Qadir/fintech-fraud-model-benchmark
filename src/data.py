@@ -6,6 +6,12 @@ import json
 import pandas as pd
 import yaml
 
+from src.validation import (
+    validate_schema,
+    inspect_chunk,
+    get_quality_status,
+)
+
 
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG_PATH = ROOT / "configs" / "config.yaml"
@@ -13,7 +19,7 @@ REPORT_PATH = ROOT / "reports" / "data_quality_report.json"
 
 
 def load_config():
-    """Load project settings from YAML."""
+    """Load project settings."""
     with CONFIG_PATH.open("r", encoding="utf-8") as file:
         return yaml.safe_load(file)
 
@@ -34,10 +40,8 @@ def audit_dataset():
             "Check source_path in configs/config.yaml"
         )
 
-    # Validate the CSV header before processing millions of rows.
     header = pd.read_csv(data_path, nrows=0).columns.tolist()
-
-    missing_columns = sorted(set(required) - set(header))
+    missing_columns = validate_schema(header, required)
     unexpected_columns = sorted(set(header) - set(required))
 
     if missing_columns:
@@ -47,7 +51,8 @@ def audit_dataset():
 
     report = {
         "dataset": str(data_path),
-        "status": "running",
+        "execution_status": "running",
+        "quality_status": "running",
         "rows": 0,
         "columns": len(header),
         "missing_values": Counter(),
@@ -55,13 +60,13 @@ def audit_dataset():
         "fraud_labels": Counter(),
         "invalid_target_rows": 0,
         "invalid_transaction_type_rows": 0,
-        "negative_numeric_values": Counter(),
         "zero_amount_rows": 0,
+        "negative_amount_rows": 0,
+        "negative_numeric_rows": 0,
+        "negative_numeric_values": Counter(),
         "duplicate_rows_within_chunks": 0,
         "missing_columns": missing_columns,
         "unexpected_columns": unexpected_columns,
-        "amount_min": None,
-        "amount_max": None,
     }
 
     numeric_columns = [
@@ -81,9 +86,11 @@ def audit_dataset():
     for chunk in pd.read_csv(data_path, chunksize=chunk_size):
         report["rows"] += len(chunk)
 
+        # Per-column missing values.
         for col, count in chunk.isna().sum().items():
             report["missing_values"][col] += int(count)
 
+        # Category and target distributions.
         for value, count in chunk["type"].value_counts().items():
             report["transaction_types"][str(value)] += int(count)
 
@@ -92,22 +99,25 @@ def audit_dataset():
         ).items():
             report["fraud_labels"][str(value)] += int(count)
 
-        report["invalid_target_rows"] += int(
-            (~chunk[target].isin([0, 1])).sum()
-        )
+        # Run the shared validation functions on real data.
+        findings = inspect_chunk(chunk, target, allowed_types)
 
-        report["invalid_transaction_type_rows"] += int(
-            (~chunk["type"].isin(allowed_types)).sum()
-        )
 
-        report["zero_amount_rows"] += int(
-            (chunk["amount"] == 0).sum()
-        )
+        for key in [
+          "invalid_target_rows",
+          "invalid_transaction_type_rows",
+           "zero_amount_rows",
+           "negative_amount_rows",
+           "negative_numeric_rows",
+        ]:
+            report[key] += findings[key]
 
-        report["duplicate_rows_within_chunks"] += int(
-            chunk.duplicated().sum()
-        )
+        report["duplicate_rows_within_chunks"] += findings[
+            "duplicate_rows_within_chunk"
+        ]
 
+
+        # Record negative values for each numeric column.
         for col in numeric_columns:
             values = pd.to_numeric(chunk[col], errors="coerce")
 
@@ -132,14 +142,13 @@ def audit_dataset():
 
     report["numeric_ranges"] = {
         col: {
-            "min": min_values[col] if min_values[col] != float("inf") else None,
-            "max": max_values[col] if max_values[col] != float("-inf") else None,
+            "min": min_values[col]
+            if min_values[col] != float("inf") else None,
+            "max": max_values[col]
+            if max_values[col] != float("-inf") else None,
         }
         for col in numeric_columns
     }
-
-    report["amount_min"] = report["numeric_ranges"]["amount"]["min"]
-    report["amount_max"] = report["numeric_ranges"]["amount"]["max"]
 
     fraud_count = report["fraud_labels"].get("1", 0)
     total_rows = report["rows"]
@@ -149,12 +158,17 @@ def audit_dataset():
         if total_rows else 0
     )
 
-    report["status"] = (
-        "completed"
-        if report["invalid_target_rows"] == 0
-        and report["invalid_transaction_type_rows"] == 0
-        else "review_required"
-    )
+    # Summarize the checks used by the shared validation module.
+    quality_findings = {
+        "missing_values": sum(report["missing_values"].values()),
+        "invalid_target_rows": report["invalid_target_rows"],
+        "invalid_transaction_type_rows":
+            report["invalid_transaction_type_rows"],
+        "negative_numeric_rows": report["negative_numeric_rows"],
+    }
+
+    report["quality_status"] = get_quality_status(quality_findings)
+    report["execution_status"] = "completed"
 
     REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
 
@@ -169,15 +183,17 @@ def audit_dataset():
     print(f"Transaction types: {report['transaction_types']}")
     print(f"Missing values: {report['missing_values']}")
     print(f"Zero-amount transactions: {report['zero_amount_rows']:,}")
+    print(f"Negative numeric rows: {report['negative_numeric_rows']:,}")
     print(
-        "Negative numeric values:",
+        "Negative numeric values by column:",
         report["negative_numeric_values"],
     )
     print(
         "Duplicate rows within chunks:",
         report["duplicate_rows_within_chunks"],
     )
-    print(f"Status: {report['status']}")
+    print(f"Execution status: {report['execution_status']}")
+    print(f"Quality status: {report['quality_status']}")
     print(f"Report saved to: {REPORT_PATH}")
 
     return report
