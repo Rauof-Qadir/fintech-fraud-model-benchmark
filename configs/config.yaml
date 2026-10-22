@@ -1,0 +1,29 @@
+project:
+  name: "FinTech Fraud Model Benchmark"
+  random_state: 42
+
+data:
+  source_path: "C:/Users/Hp/Desktop/Projects/fintech-fraud-risk-intelligence/data/raw/transactions.csv"
+  chunk_size: 200000
+  target_column: "isFraud"
+
+validation:
+  required_columns:
+    - step
+    - type
+    - amount
+    - nameOrig
+    - oldbalanceOrg
+    - newbalanceOrig
+    - nameDest
+    - oldbalanceDest
+    - newbalanceDest
+    - isFraud
+    - isFlaggedFraud
+
+  allowed_transaction_types:
+    - CASH_IN
+    - CASH_OUT
+    - DEBIT
+    - PAYMENT
+    - TRANSFER
