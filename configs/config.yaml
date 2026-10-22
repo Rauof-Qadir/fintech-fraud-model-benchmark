@@ -27,3 +27,8 @@ validation:
     - DEBIT
     - PAYMENT
     - TRANSFER
+
+
+split:
+  train_max_step: 520
+  validation_max_step: 631
