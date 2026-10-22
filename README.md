@@ -36,6 +36,15 @@ This project evaluates multiple machine learning models and rule-based strategie
 
 **Important:** The dataset used in this project is synthetic. Results demonstrate an experimental workflow and should not be interpreted as guaranteed performance on real banking transactions.
 
+
+
+## Dashboard
+![Executive Overview](docs/images/1.pdf)
+![Model Performance](docs/images/2.pdf)
+![ransaction Explorer](docs/images/3.pdf)
+![Risk & Cost Lab](docs/images/4.pdf)
+
+
 ## Project Objectives
 
 - Build and evaluate multiple fraud detection models.
@@ -185,6 +194,32 @@ Feature audits and ablation experiments investigate how these features affect pr
 
 Some engineered features are extremely predictive in this synthetic dataset. That does not automatically mean the same relationships will generalize to real financial transactions. Their meaning, availability at decision time, and potential leakage risks require careful validation.
 
+
+## Final Cost-Aware Audit
+
+The project includes validation-selected cost thresholds and a test evaluation
+across three models and 16 illustrative business-cost scenarios per model.
+
+Additional experiment scripts:
+- `src/audit_balance_identity.py` ? investigates origin-balance patterns.
+- `src/controlled_ablation.py` ? compares selected feature groups.
+- `src/origin_feature_ablation.py` ? investigates origin-feature dependencies.
+- `src/cost_aware_thresholds.py` ? selects thresholds using validation costs.
+- `src/evaluate_cost_aware_test.py` ? evaluates selected thresholds on test data.
+- `src/compare_balance_rule.py` ? compares balance-based rules and ML models.
+
+The consolidated local audit is generated at
+`reports/final_cost_aware_model_audit.csv`. Generated reports are not generally
+tracked by Git because the `reports/` directory is ignored; selected final
+artifacts can be explicitly added when appropriate.
+
+**Evaluation caveat:** the chronological test split was examined in multiple
+exploratory analyses. Treat those comparisons as exploratory, not as an
+untouched final holdout or an unbiased estimate of production performance.
+A fresh future-period dataset is needed for stronger independent evaluation.
+
+
+
 ## Repository Structure
 
 ```text
@@ -241,6 +276,13 @@ python -m src.data
 
 This command validates the raw transaction dataset and generates the data-quality report configured by the project.
 
+
+## Launch the dashboard
+```powershell
+python -m streamlit run dashboard_app.py
+```
+Streamlit will display the local dashboard URL in the terminal.
+
 ## Reproducibility and Limitations
 
 - The dataset is synthetic and may not reflect real fraud behavior.
@@ -271,28 +313,4 @@ GitHub: [Rauof-Qadir](https://github.com/Rauof-Qadir)
 ---
 
 *This project is an educational and portfolio-oriented machine learning experiment, not a production-ready banking fraud prevention system.*
-
-
-## Final Cost-Aware Audit
-
-The project includes validation-selected cost thresholds and a test evaluation
-across three models and 16 illustrative business-cost scenarios per model.
-
-Additional experiment scripts:
-- `src/audit_balance_identity.py` ? investigates origin-balance patterns.
-- `src/controlled_ablation.py` ? compares selected feature groups.
-- `src/origin_feature_ablation.py` ? investigates origin-feature dependencies.
-- `src/cost_aware_thresholds.py` ? selects thresholds using validation costs.
-- `src/evaluate_cost_aware_test.py` ? evaluates selected thresholds on test data.
-- `src/compare_balance_rule.py` ? compares balance-based rules and ML models.
-
-The consolidated local audit is generated at
-`reports/final_cost_aware_model_audit.csv`. Generated reports are not generally
-tracked by Git because the `reports/` directory is ignored; selected final
-artifacts can be explicitly added when appropriate.
-
-**Evaluation caveat:** the chronological test split was examined in multiple
-exploratory analyses. Treat those comparisons as exploratory, not as an
-untouched final holdout or an unbiased estimate of production performance.
-A fresh future-period dataset is needed for stronger independent evaluation.
 
