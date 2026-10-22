@@ -2,7 +2,7 @@
 
 A machine learning project for benchmarking fraud detection models, optimizing decision thresholds, auditing transaction features, and comparing fraud detection strategies using business-cost assumptions.
 
-[![Python Tests](https://github.com/Rauof-Qadir/fintech-fraud-model-benchmark/actions/workflows/tests.yml/badge.svg)](https://github.com/Rauof-Qadir/fintech-fraud-model-benchmark/actions/workflows/tests.yml)
+
 
 <p align="center">
   <img src="https://img.shields.io/badge/Python-3.11-blue?logo=python&logoColor=white" alt="Python 3.11" />
@@ -10,6 +10,9 @@ A machine learning project for benchmarking fraud detection models, optimizing d
   <img src="https://img.shields.io/badge/Models-Logistic%20Regression%20%7C%20RF%20%7C%20XGBoost-orange" alt="Models" />
   <img src="https://img.shields.io/badge/Testing-pytest-brightgreen?logo=pytest" alt="pytest" />
   <img src="https://img.shields.io/badge/Status-Research%20%26%20Evaluation-blueviolet" alt="Research and Evaluation" />
+  <a href="https://github.com/Rauof-Qadir/fintech-fraud-model-benchmark/actions/workflows/tests.yml">
+    <img src="https://github.com/Rauof-Qadir/fintech-fraud-model-benchmark/actions/workflows/tests.yml/badge.svg" alt="Python Tests">
+</a>
 </p>
 <p align="center">
   <b>Cost-sensitive fraud detection, model benchmarking, feature auditing, and threshold optimization.</b>
