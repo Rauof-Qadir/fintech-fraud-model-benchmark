@@ -141,6 +141,18 @@ def main():
     metrics = {
         "model": "XGBoost",
         "threshold": THRESHOLD,
+    "model_config": {
+            "n_estimators": 300,
+            "max_depth": 6,
+            "learning_rate": 0.05,
+         "subsample": 0.8,
+            "colsample_bytree": 0.8,
+         "objective": "binary:logistic",
+            "eval_metric": "aucpr",
+            "tree_method": "hist",
+            "sample_size": SAMPLE_SIZE,
+            "random_state": RANDOM_STATE,
+        },
         "original_training_rows": int(len(train)),
         "sampled_training_rows": int(len(train_sample)),
         "sampled_training_fraud_cases": int(y_train.sum()),

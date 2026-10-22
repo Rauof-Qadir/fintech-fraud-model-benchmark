@@ -141,6 +141,14 @@ def main():
     metrics = {
         "model": "Logistic Regression",
         "threshold": THRESHOLD,
+        "model_config": {
+         "class_weight": "balanced",
+         "solver": "lbfgs",
+         "max_iter": 200,
+         "random_state": 42,
+         "numeric_scaling": "StandardScaler",
+         "categorical_encoding": "OneHotEncoder",
+},
         "training_rows": int(len(train)),
         "training_fraud_cases": int(y_train.sum()),
         "validation_rows": int(len(validation)),

@@ -143,6 +143,17 @@ def main():
     metrics = {
         "model": "Random Forest",
         "threshold": THRESHOLD,
+        "model_config": {
+            "n_estimators": 150,
+            "max_depth": 18,
+            "min_samples_leaf": 10,
+        "max_features": "sqrt",
+        "class_weight": "balanced_subsample",
+            "sample_size": SAMPLE_SIZE,
+            "random_state": RANDOM_STATE,
+            "numeric_features": "passthrough",
+            "categorical_encoding": "OneHotEncoder",
+        },
         "original_training_rows": int(len(train)),
         "sampled_training_rows": int(len(train_sample)),
         "sampled_training_fraud_cases": int(y_train.sum()),

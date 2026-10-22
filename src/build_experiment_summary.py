@@ -19,6 +19,40 @@ VALIDATION_FILES = {
     "XGBoost": "xgboost_validation.json",
 }
 
+MODEL_CONFIGS = {
+    "Logistic Regression": {
+        "class_weight": "balanced",
+        "solver": "lbfgs",
+        "max_iter": 200,
+        "random_state": 42,
+        "numeric_scaling": "StandardScaler",
+        "categorical_encoding": "OneHotEncoder",
+    },
+    "Random Forest": {
+        "n_estimators": 150,
+        "max_depth": 18,
+        "min_samples_leaf": 10,
+        "max_features": "sqrt",
+        "class_weight": "balanced_subsample",
+        "sample_size": 500000,
+        "random_state": 42,
+        "numeric_features": "passthrough",
+        "categorical_encoding": "OneHotEncoder",
+    },
+    "XGBoost": {
+        "n_estimators": 300,
+        "max_depth": 6,
+        "learning_rate": 0.05,
+        "subsample": 0.8,
+        "colsample_bytree": 0.8,
+        "objective": "binary:logistic",
+        "eval_metric": "aucpr",
+        "tree_method": "hist",
+        "sample_size": 500000,
+        "random_state": 42,
+    },
+}
+
 
 def read_json(path):
     with path.open("r", encoding="utf-8") as file:
@@ -68,6 +102,10 @@ def main():
 
         experiments.append({
             "model": model_name,
+            "model_config": validation.get(
+                "model_config",
+            MODEL_CONFIGS[model_name],
+           ),
             "training_rows": validation.get(
                 "training_rows",
                 validation.get("sampled_training_rows")
