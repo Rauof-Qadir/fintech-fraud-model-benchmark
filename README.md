@@ -39,10 +39,10 @@ This project evaluates multiple machine learning models and rule-based strategie
 
 
 ## Dashboard
-![Executive Overview](docs/images/1.pdf)
-![Model Performance](docs/images/2.pdf)
-![ransaction Explorer](docs/images/3.pdf)
-![Risk & Cost Lab](docs/images/4.pdf)
+![Executive Overview](docs/images/1.png)
+![Model Performance](docs/images/2.png)
+![ransaction Explorer](docs/images/3.png)
+![Risk & Cost Lab](docs/images/4.png)
 
 
 ## Project Objectives
