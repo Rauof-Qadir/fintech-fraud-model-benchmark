@@ -70,46 +70,52 @@ The dataset contains transaction attributes such as transaction type, amount, or
 
 The original dataset is stored outside this repository. Its location is configured through the project's data-preparation configuration. Obtain the dataset separately and configure the appropriate input path before running the pipeline.
 
+
 ## Project Architecture
 
-```text
-Raw Transactions
-       |
-       v
-Data Quality Validation
-       |
-       v
-Chronological Data Splitting
-       |
-       v
-Feature Engineering
-       |
-       v
-Model Training
-       |
-       +-------------------+
-       |         |         |
-       v         v         v
-   Logistic     Random    XGBoost
-  Regression    Forest
-       |         |         |
-       +---------+---------+
-                 |
-                 v
-       Validation Evaluation
-                 |
-                 v
-       Threshold Optimization
-                 |
-                 v
-       Test-Set Evaluation
-                 |
-                 v
-     Feature & Rule Audits
-                 |
-                 v
-       Cost Sensitivity Analysis
+The pipeline moves from transaction-level data validation to chronological model evaluation and cost-sensitive decision analysis.
+
+```mermaid
+flowchart TD
+    A[("Raw Transaction Dataset<br/>6.36M transactions")] --> B["Data Quality Validation<br/>Missing values · Duplicates · Invalid values"]
+    B --> C["Chronological Data Preparation<br/>Train · Validation · Test"]
+    C --> D["Feature Engineering<br/>Log amount · Balance ratios · Coverage"]
+
+    D --> E["Logistic Regression"]
+    D --> F["Random Forest"]
+    D --> G["XGBoost"]
+
+    E --> H["Validation Evaluation<br/>PR-AUC · Precision · Recall"]
+    F --> H
+    G --> H
+
+    H --> I["Threshold Optimization<br/>Validation-based decision thresholds"]
+    I --> J["Held-out Test Evaluation<br/>Confusion matrix · PR-AUC · Cost"]
+
+    J --> K["Strategy Benchmarking<br/>ML models vs. rule-based strategies"]
+    K --> L["Feature Audits & Ablation<br/>Importance · Predictive dependencies"]
+    K --> M["Cost Sensitivity Analysis<br/>False-positive cost · Missed-fraud loss"]
+
+    L --> N[("Reports<br/>CSV · JSON · TXT")]
+    M --> N
+    J --> N
+
+    classDef data fill:#172554,color:#ffffff,stroke:#60a5fa,stroke-width:2px
+    classDef process fill:#e0f2fe,color:#0c4a6e,stroke:#0284c7,stroke-width:1.5px
+    classDef model fill:#ede9fe,color:#4c1d95,stroke:#8b5cf6,stroke-width:1.5px
+    classDef evaluation fill:#dcfce7,color:#14532d,stroke:#22c55e,stroke-width:1.5px
+    classDef analysis fill:#ffedd5,color:#7c2d12,stroke:#f97316,stroke-width:1.5px
+
+    class A,N data
+    class B,C,D process
+    class E,F,G model
+    class H,I,J evaluation
+    class K,L,M analysis
+
+    linkStyle default stroke:#64748b,stroke-width:1.5px
 ```
+
+> **Evaluation note:** The dataset is synthetic, and exploratory rule analysis used test-set labels. Results from those exploratory rules are not an unbiased final estimate of production performance.
 
 ## Models Evaluated
 
